@@ -2,163 +2,285 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import Stats from 'three/addons/libs/stats.module.js';
+import on from '../image/volumeOn.png';
+import off from '../image/volumeOff.png';
+import textureImage from '../image/floor.jpg';
+import * as TWEEN from '@tweenjs/tween.js'
 
 const width = window.innerWidth;
 const height = window.innerHeight;
+// car color
+const colorAry = ["#76EEC6", "#00BFFF", "#FFA500", "#FF6347" ,"#E8E8E8" ,"#E066FF"];
 
 // step1 : create a renderer and add it to the dom.
+const container = document.createElement( 'div' );
+document.body.appendChild( container );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio( window.devicePixelRatio );
 renderer.enabled = true;
 renderer.setSize(width, height);
-document.body.appendChild(renderer.domElement);
+container.appendChild(renderer.domElement);
+renderer.shadowMap.enabled = true;
 
 // step2 : create scene 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
-scene.environment = new THREE.Color(0x000000); // 设置环境光颜色
-scene.fog = new THREE.Fog( 0xcce0ff, 2500, 10000)   //加上雾化的效果
+// scene.background = new THREE.Color( 0x050505 );
+scene.background = new THREE.Color( 0x0000 );
 
 // step3 : create a camera & add it to the scene.
-const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
+const camera = new THREE.PerspectiveCamera(45, width / height, 1, 180);
 camera.position.set(20, 20, 20);
 scene.add(camera);
 
-// step4 : create a light & set its position & add it to the scene.
-// const ambient = new THREE.AmbientLight("0xffff00", 1);
-// scene.add(ambient);
+// step4 : create a spotlight & set its position & add it to the scene.
+const light1 = new THREE.SpotLight( 0xffffff, 2000, 0 );
+light1.position.set( 0, 40, 0 );
+light1.angle = 0.5;
+light1.penumbra = 0.5;
+light1.castShadow = true;
+light1.shadow.mapSize.width = 1024;
+light1.shadow.mapSize.height = 1024;
+scene.add( light1 );
 
-let light1 = new THREE.DirectionalLight(0xffffff, 1); // 创建一个方向光，参数为光的颜色和强度
-light1.position.set(0, 0, 10);
-scene.add(light1);
-let light2 = new THREE.DirectionalLight(0xffffff, 1);
+// step4 : create directionlight & set its position & add it to the scene.
+let light2 = new THREE.DirectionalLight(0xffffff, 2);
 light2.position.set(0, 0, -10);
 scene.add(light2);
-let light3 = new THREE.DirectionalLight(0xffffff, 1);
+let light3 = new THREE.DirectionalLight(0xffffff, 2);
 light3.position.set(10, 0, 0);
 scene.add(light3);
-let light4 = new THREE.DirectionalLight(0xffffff, 1);
+let light4 = new THREE.DirectionalLight(0xffffff, 2);
 light4.position.set(-10, 0, 0);
 scene.add(light4);
 let light5 = new THREE.DirectionalLight(0xffffff, 1);
-light5.position.set(0, 10, 0);
+light5.position.set(0, 0, 10);
 scene.add(light5);
-let light6 = new THREE.DirectionalLight(0xffffff, 1);
-light6.position.set(0, -10, 0);
-scene.add(light6);
-let light7 = new THREE.DirectionalLight(0xffffff, 1);
-light7.position.set(10, 10, 10);
-scene.add(light7);
-let light8 = new THREE.DirectionalLight(0xffffff, 1);
-light8.position.set(10, 10, -10);
-scene.add(light8);
-let light9 = new THREE.DirectionalLight(0xffffff, 1);
-light9.position.set(-10, 10, 10);
-scene.add(light9);
-let light10 = new THREE.DirectionalLight(0xffffff, 1);
-light10.position.set(-10, 10, -10);
-light10.castShadow = true;
-scene.add(light10);
 
-const helper = new THREE.DirectionalLightHelper( light10, 1 );
-scene.add( helper );
+// step4 : add light help line.
+// const helper1 = new THREE.DirectionalLightHelper( light1, 1 );
+// scene.add( helper1 );
+// const helper2 = new THREE.DirectionalLightHelper( light2, 1 );
+// scene.add( helper2 );
+// const helper3 = new THREE.DirectionalLightHelper( light3, 1 );
+// scene.add( helper3 );
+// const helper4 = new THREE.DirectionalLightHelper( light4, 1 );
+// scene.add( helper4 );
+// const helper5 = new THREE.DirectionalLightHelper( light5, 1 );
+// scene.add( helper5 );
 
-// // //创建点光源
-// const point = new THREE.PointLight("0xffffff", 1);
-// //设置点光源位置
-// point.position.set(200, 300, 200); 
-// //点光源添加到场景中
-// scene.add(point); 
-
-// const light = new THREE.DirectionalLight(0xffffff, 300);
-// light.castShadow = true;
-// light.position.set(250,40,280);
-// scene.add(light);
 
 // step5 : add help line.
-//创建网格对象，参数1:大小，参数2:网格细分次数,参数3:网格中线颜色，参数4:网格线条颜色
-const grid = new THREE.GridHelper(40, 40, 0xffffff, 0xffffff);
-//网格透明度
-grid.material.opacity = 0.5;
-grid.material.depthWrite = false;
-grid.material.transparent = true;
-scene.add(grid);
+// const grid = new THREE.GridHelper(40, 40, 0xffffff, 0xffffff);
+// grid.material.opacity = 0.5;
+// grid.material.depthWrite = false;
+// grid.material.transparent = true;
+// scene.add(grid);
 
-const axes = new THREE.AxesHelper(50);
-scene.add( axes );
+
+// sport light
+const carlight = new THREE.SpotLight(0xFFF68F, 1000, 200, Math.PI/6)
+carlight.position.set(0, 15, 0)
+carlight.castShadow = true;
+carlight.shadow.mapSize.width = 1024;
+carlight.shadow.mapSize.height = 1024;
+const carlightTarget = new THREE.Object3D();
+carlightTarget.position.set(-5, 0, 0)
+scene.add(carlightTarget)
+carlight.target = carlightTarget;
+scene.add(carlight)
+// const carHelper = new THREE.SpotLightHelper( carlight, 1 );
+// scene.add( carHelper );
+
+// step5 : add axes help line.
+// const axes = new THREE.AxesHelper(50);
+// scene.add( axes );
 
 // step6 : add modal
-// 车身材质
-const bodyMaterial = new THREE.MeshPhysicalMaterial( {
-    color: 0xff0000, metalness: 1.0, roughness: 0.5, clearcoat: 1.0, clearcoatRoughness: 0.03
-} );
+let carModel = null;
+let leftDoorObject = [];
+let rightDoorObject = [];
+let leftGroup = new THREE.Group();
+let rightGroup = new THREE.Group();
+const loader = new GLTFLoader();
+let animateTarget = { lx: -0.1, lz: 0, lr: 0, rx: 0.1, rz: 0, rr:0 };
+let tween = null;
+let lightTarget = {x:-5, y:0, z:-5}
+let carTween = null;
 
-const detailsMaterial = new THREE.MeshStandardMaterial( {
-    color: 0xffffff, metalness: 1.0, roughness: 0.5
-} );
-
-const glassMaterial = new THREE.MeshPhysicalMaterial( {
-    color: 0xffffff, metalness: 0.25, roughness: 0, transmission: 1.0
-} );
-let carModel = null
-const loader = new GLTFLoader()
-loader.load('scene.gltf', (gltf)=>{
-    console.log(gltf.scene);
+loader.load('car/scene.gltf', (gltf)=>{
     carModel = gltf.scene.children[0];
-    
-    console.log(carModel.getObjectByName('r35_body'))
-    
-    carModel.getObjectByName('r35_body').children.forEach(element => {
-        // element.material = bodyMaterial;
-    });
+    console.log(gltf.scene.children[0]);
 
-    // carModel.getObjectByName( 'body' ).material = bodyMaterial;
-    // carModel.getObjectByName( 'rim_fl' ).material = detailsMaterial;
-    // carModel.getObjectByName( 'rim_fr' ).material = detailsMaterial;
-    // carModel.getObjectByName( 'rim_rr' ).material = detailsMaterial;
-    // carModel.getObjectByName( 'rim_rl' ).material = detailsMaterial;
-    // carModel.getObjectByName( 'trim' ).material = detailsMaterial;
-    // carModel.getObjectByName( 'glass' ).material = glassMaterial;
+    gltf.scene.traverse((item)=>{
+        item.castShadow = true;
+        if(item.name =='r35_door_R001' || item.name =='r35_doorpanel_L_be' || item.name =='r35_doorglass_L' || item.name =='r35_mirror_L_cf'){
+            // console.log(item)
+            const temp = item.clone();
+            leftDoorObject.push(temp);
+            item.visible = false;
+            return;
+        }
+        if(item.name =='r35_door_R' || item.name =='r35_doorpanel_R_be' || item.name =='r35_doorglass_R' || item.name =='r35_mirror_R_cf'){
+            // console.log(item)
+            const temp = item.clone();
+            rightDoorObject.push(temp);
+            item.visible = false;
+            return;
+        }
+    })
+    leftDoorObject.forEach((item)=>{
+        leftGroup.add(item)
+    })
+    rightDoorObject.forEach((item)=>{
+        rightGroup.add(item)
+    })
+    // 换色
+    carModel.getObjectByName( 'r35_hood_race_r35_paint_0' ).material.color.set('#76EEC6');
+    carModel.getObjectByName( 'r35_roof_cf_r35_paint_0' ).material.color.set('#76EEC6');
 
-    carModel.scale.setScalar(4);
+    leftGroup.position.set(0,0,0)
+    leftGroup.castShadow = true;
+    leftGroup.scale.setScalar(0.05);
+    scene.add(leftGroup);
+    rightGroup.position.set(0,0,0)
+    rightGroup.scale.setScalar(0.05);
+    scene.add(rightGroup);
+
+    carModel.position.set(0,0,0)
+    carModel.scale.setScalar(5);
     scene.add(carModel)
 })
 
+
+
 // step7 : add floor
-const floorGeometry = new THREE.PlaneGeometry(40,40)
+const floorTexture = new THREE.TextureLoader().load(textureImage);
+const floorGeometry = new THREE.PlaneGeometry(60,60)
 const floormaterial = new THREE.MeshPhysicalMaterial({
-//   side: THREE.DoubleSide,
-  color: 0x000000,
-  metalness: 0.2, // 设置金属度
-  roughness: 0.2, // 设置粗糙度
-  wireframe: false // 关闭网格线
+    side: THREE.BackSide,
+    map: floorTexture,
 })
 const mesh = new THREE.Mesh(floorGeometry,floormaterial)
+mesh.rotation.x = - Math.PI / 2;
+mesh.material.map.repeat.set( 6, 6 );
+mesh.material.map.wrapS = mesh.material.map.wrapT = THREE.RepeatWrapping;
+mesh.material.map.colorSpace = THREE.SRGBColorSpace;
+mesh.receiveShadow = true;
 mesh.rotation.x = Math.PI / 2
 scene.add(mesh)
 
-// 设置聚光灯(让汽车更具有立体金属感)
-// const spotLight = new THREE.SpotLight('#fff',100)
-// spotLight.angle = Math.PI / 8 // 散射角度，和水平线的夹角
-// spotLight.penumbra = 0.2 // 横向，聚光锥的半影衰减百分比
-// spotLight.decay = 1 // 纵向，沿着光照距离的衰减量
-// spotLight.distance = 30
-// spotLight.shadow.radius = 10
-// spotLight.shadow.mapSize.set(4096,4096)
-// spotLight.position.set(-5,10,1)
-// spotLight.target.position.set(0,0,0) // 光照射的方向
-// spotLight.castShadow = true
-// scene.add(spotLight)
-
 // step8 : add OrbitControls so that we can pan around with the mouse.
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.maxPolarAngle = 0.9 * Math.PI / 2
+controls.minPolarAngle = 0.9 * Math.PI / 3.5
+controls.enableDamping = true; // 启用阻尼
+// controls.enableZoom = false
+controls.minDistance = 23;
+controls.maxDistance = 40;
 
 // step9 : add stats
 const stats = Stats();
 document.body.appendChild(stats.dom);
 
+// step10 : add music
+const listener = new THREE.AudioListener();
+camera.add( listener );
+
+// 创建一个全局 audio 源,加载一个 sound 并将其设置为 Audio 对象的缓冲区
+let sound = new THREE.Audio( listener );
+sound.autoplay = true;
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load( 'car.mp3', function( buffer ) {
+	sound.setBuffer( buffer );
+	sound.setLoop( true );
+	sound.setVolume( 0.2 );
+	sound.play();
+});
+
 resize();
 animate();
 window.addEventListener('resize',resize);
+
+// add ui
+const color = document.querySelector('.color');
+colorAry.forEach((item)=>{
+    const temp = document.createElement('div');
+    temp.className = 'item';
+    temp.style.backgroundColor = item;
+    temp.onclick = function(){
+        carModel.getObjectByName( 'r35_hood_race_r35_paint_0' ).material.color.set(item);
+        carModel.getObjectByName( 'r35_roof_cf_r35_paint_0' ).material.color.set(item);
+    }
+    color.appendChild(temp)
+})
+const music = document.querySelector('.music');
+const onImg = document.createElement('img');
+onImg.src= on;
+const offImg = document.createElement('img');
+offImg.src=off;
+music.appendChild(onImg)
+music.appendChild(offImg)
+onImg.onclick = function(){
+    sound.setVolume( 0 );
+    sound.stop();
+    onImg.style.display = 'none';
+    offImg.style.display ='block';
+}
+offImg.onclick = function(){
+    sound.setVolume( 0.2 );
+    sound.play();
+    onImg.style.display = 'block';
+    offImg.style.display ='none';
+}
+offImg.style.display ='none';
+
+
+function openDoor() {
+    tween = new TWEEN.Tween(animateTarget)
+        .to({ lx: 5, lz: -2.1, lr: -Math.PI / 3, rx: -5, rz: -2.1, rr: Math.PI / 3 }, 1000)
+        .onUpdate(function (object) {
+            leftGroup.position.x = object.lx;
+            leftGroup.position.z =  object.lz;
+            leftGroup.rotation.y = object.lr;
+            rightGroup.position.x = object.rx;
+            rightGroup.position.z = object.rz;
+            rightGroup.rotation.y = object.rr;
+        })
+        .start();
+}
+
+function closeDoor() {
+    tween = new TWEEN.Tween(animateTarget)
+        .to({ lx: 0, lz: 0, lr: 0, rx: 0, rz: 0, rr:0 }, 1000)
+        .onUpdate(function (object) {
+            leftGroup.position.x = object.lx;
+            leftGroup.position.z =  object.lz;
+            leftGroup.rotation.y = object.lr;
+            rightGroup.position.x = object.rx;
+            rightGroup.position.z = object.rz;
+            rightGroup.rotation.y = object.rr;
+        })
+        .start();
+}
+
+const toggle = document.querySelector('.switch');
+const checkInput = document.createElement('input');
+checkInput.type = 'checkbox';
+checkInput.checked = false;
+
+checkInput.onclick = function(){
+    checkInput.checked = this.checked;
+    if(checkInput.checked){
+        openDoor();
+    }else{
+        closeDoor();
+    }
+}
+toggle.appendChild(checkInput)
+const checkSpan = document.createElement('span');
+checkSpan.className = 'slider round';
+toggle.appendChild(checkSpan)
+
 
 function resize(){
   let w = window.innerWidth;
@@ -169,12 +291,19 @@ function resize(){
   camera.updateProjectionMatrix();
 }
 
+carTween = new TWEEN.Tween(lightTarget)
+.to({ x: 5, y: 0, z: 4 }, 5000)
+.onUpdate(function (object) {
+    carlightTarget.position.set(object.x, object.y, object.z)
+})
+.repeat(Infinity).yoyo(true).start();
+
 // Renders the scene
 function animate() {
-    if( carModel){
-        carModel.rotation.z -= 0.001;
-    }
-    
+    // if( carModel){
+    //     carModel.rotation.z -= 0.001;
+    // }
+    TWEEN.update()
     renderer.render( scene, camera );
     controls.update();
     stats.update();

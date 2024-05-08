@@ -52,7 +52,8 @@ mesh.position.set(0, 10, 0);
 const controls = new OrbitControls(camera, renderer.domElement);
 
 // step8 : add stats
-document.body.appendChild(Stats.dom);
+const stats = Stats();
+document.body.appendChild(stats.dom);
 
 resize();
 animate();
