@@ -76,7 +76,6 @@ scene.add(light5);
 // grid.material.transparent = true;
 // scene.add(grid);
 
-
 // sport light
 const carlight = new THREE.SpotLight(0xFFF68F, 1000, 200, Math.PI/6)
 carlight.position.set(0, 15, 0)
@@ -87,13 +86,18 @@ const carlightTarget = new THREE.Object3D();
 carlightTarget.position.set(-5, 0, 0)
 scene.add(carlightTarget)
 carlight.target = carlightTarget;
-scene.add(carlight)
+scene.add(carlight);
 // const carHelper = new THREE.SpotLightHelper( carlight, 1 );
 // scene.add( carHelper );
 
 // step5 : add axes help line.
 // const axes = new THREE.AxesHelper(50);
 // scene.add( axes );
+
+// 创建雷电灯光
+const thunderLight = new THREE.PointLight(0xffffff, 100, 100); // 初始强度设置为0
+thunderLight.position.set(0, 50, 0); // 设置雷电灯光的位置
+scene.add(thunderLight);
 
 // step6 : add modal
 let carModel = null;
@@ -126,6 +130,12 @@ loader.load('car/scene.gltf', (gltf)=>{
             rightDoorObject.push(temp);
             item.visible = false;
             return;
+        }
+        if (item.name === '3_Wheel.003') {
+            item.rotation.x = Math.PI / 2; // 调整左前轮的朝向
+        }
+        if (item.name === '3_Wheel.004') {
+            item.rotation.x = Math.PI / 2; // 调整右前轮的朝向
         }
     })
     leftDoorObject.forEach((item)=>{
@@ -185,6 +195,9 @@ document.body.appendChild(stats.dom);
 // step10 : add music
 const listener = new THREE.AudioListener();
 camera.add( listener );
+
+// 控制雨滴的开关
+let isRaining = false;
 
 // 创建一个全局 audio 源,加载一个 sound 并将其设置为 Audio 对象的缓冲区
 let sound = new THREE.Audio( listener );
@@ -281,6 +294,25 @@ const checkSpan = document.createElement('span');
 checkSpan.className = 'slider round';
 toggle.appendChild(checkSpan)
 
+// rain toggle
+const toggleRainButton = document.querySelector('.switchRain');
+const checkInputRain = document.createElement('input');
+checkInputRain.type = 'checkbox';
+checkInputRain.checked = false;
+
+checkInputRain.onclick = function(){
+    checkInputRain.checked = this.checked;
+    if(checkInputRain.checked){
+        toggleRain();
+    }else{
+        toggleRain();
+    }
+}
+toggleRainButton.appendChild(checkInputRain)
+const checkSpanRain = document.createElement('span');
+checkSpanRain.className = 'slider round rain';
+toggleRainButton.appendChild(checkSpanRain)
+
 
 function resize(){
   let w = window.innerWidth;
@@ -298,7 +330,63 @@ carTween = new TWEEN.Tween(lightTarget)
 })
 .repeat(Infinity).yoyo(true).start();
 
-// Renders the scene
+
+
+// step11 : 添加雨滴效果
+const rainCount = 10000; // 雨滴数量
+const rainGeometry = new THREE.BufferGeometry();
+const positions = new Float32Array(rainCount * 3);
+const rainSpeeds = new Float32Array(rainCount); // 存储每个雨滴的下落速度
+
+for (let i = 0; i < rainCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 200; // 随机 X 位置
+    positions[i * 3 + 1] = Math.random() * 100; // 随机 Y 位置，靠近相机
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 200; // 随机 Z 位置
+    rainSpeeds[i] = 0.5 + Math.random() * 0.5; // 随机下落速度
+}
+rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+// 调整雨滴的材质
+const rainMaterial = new THREE.PointsMaterial({ color: 0xAAAAAA, size: 0.1, transparent: true, opacity: 0.8 }); // 更小的雨滴
+const rain = new THREE.Points(rainGeometry, rainMaterial);
+scene.add(rain);
+
+// 控制雨滴的开关
+function toggleRain() {
+    isRaining = !isRaining;
+    rain.visible = isRaining; // 简化开关逻辑
+}
+
+// 定义闪电效果的函数
+function flashThunder() {
+    const duration = Math.random() * 300 + 200; // 随机闪电持续时间
+    const maxIntensity = Math.random() * 2000 + 10; // 随机最大强度
+
+    // 逐渐增加灯光强度
+    new TWEEN.Tween({ intensity: 100 })
+        .to({ intensity: maxIntensity }, duration / 2)
+        .onUpdate(function () {
+            thunderLight.intensity = this.intensity;
+        })
+        .onComplete(() => {
+            // 逐渐减小灯光强度
+            new TWEEN.Tween({ intensity: maxIntensity })
+                .to({ intensity: 0 }, duration / 2)
+                .onUpdate(function () {
+                    thunderLight.intensity = this.intensity;
+                })
+                .start();
+        })
+        .start();
+
+    // 随机设置下一个闪电的时间
+    setTimeout(flashThunder, Math.random() * 2000 + 1000); // 闪电间隔在1到3秒之间
+}
+
+// 启动闪电效果
+// flashThunder();
+
+// 在动画循环中更新雨滴位置
 function animate() {
     // if( carModel){
     //     carModel.rotation.z -= 0.001;
@@ -308,5 +396,14 @@ function animate() {
     controls.update();
     stats.update();
     
+    if (isRaining) {
+        const positions = rain.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+            positions[i + 1] -= rainSpeeds[i / 3]; // 使用随机下落速度
+            if (positions[i + 1] < -50) positions[i + 1] = 100; // 重置雨滴位置
+        }
+        rain.geometry.attributes.position.needsUpdate = true; // 更新雨滴位置
+    }
+
     requestAnimationFrame( animate );
 }

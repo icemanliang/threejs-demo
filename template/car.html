@@ -46,6 +46,16 @@
             color: #ffffff;
           }
         }
+        .switcherRain {
+          position: absolute;
+          bottom:180px;
+          left: 40px;
+          span {
+            line-height: 34px;
+            vertical-align: top;
+            color: #ffffff;
+          }
+        }
         .switch {
           margin-left: 20px;
           position: relative;
@@ -55,6 +65,20 @@
         }
 
         .switch input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .switchRain {
+          margin-left: 20px;
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+
+        .switchRain input { 
           opacity: 0;
           width: 0;
           height: 0;
@@ -113,6 +137,10 @@
         <div class="switcher">
           <span>Toggle Door</span>
           <label class="switch"></label>
+        </div>
+        <div class="switcherRain">
+          <span>Toggle Rain</span>
+          <label class="switchRain"></label>
         </div>
         <div class="music"></div>
         <div class="color"></div>
